@@ -240,9 +240,9 @@ int main() {
         // process client requests based on first character
         if (buffer[0] == 'R') {
             char topic[MAX_TOPIC];
-            int port;
-            sscanf(buffer + 1, "%s %d", topic, &port);
-            register_chatServerRooms(topic, port, inet_ntoa(cli_addr.sin_addr), ssl);
+            int clientPort;
+            sscanf(buffer + 1, "%s %d", topic, &clientPort);
+            register_chatServerRooms(topic, clientPort, inet_ntoa(cli_addr.sin_addr), ssl);
         } else if (buffer[0] == 'L') {
             listOfServers(ssl);
         } else if (buffer[0] == 'D') {

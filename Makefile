@@ -11,7 +11,7 @@ OBJECTS	+= $(SOURCES:.c=.dSYM*)
 EXTRAS	= $(SOURCES:.c=.exe*)
 LIBS		=
 LDFLAGS	=
-CFLAGS	= -g -ggdb -std=c99 \
+CFLAGS	= -g -ggdb -std=c99 -D_POSIX_C_SOURCE=200809L \
 				-Wuninitialized -Wunused -Wunused-macros -Wunused-variable \
 				-Wunused-function -Wunused-but-set-parameter \
 				-Wignored-qualifiers -Wshift-negative-value \
@@ -36,13 +36,13 @@ tls:	$(EXECUTABLES)
 
 
 chatClient5: chatClient5.c $(DEPS)
-	$(CC) $(LDFLAGS) $(CFLAGS) $(INCLUDES) $(LDFLAGS) -o $@ $< $(LIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $< $(LIBS)
 
 chatServer5: chatServer5.c $(DEPS)
-	$(CC) $(LDFLAGS) $(CFLAGS) $(INCLUDES) $(LDFLAGS) -o $@ $< $(LIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $< $(LIBS)
 
 directoryServer5: directoryServer5.c $(DEPS)
-	$(CC) $(LDFLAGS) $(CFLAGS) $(INCLUDES) $(LDFLAGS) -o $@ $< $(LIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $< $(LIBS)
 
 
 # Clean up the mess we made
