@@ -163,10 +163,12 @@ SSL *connect_to_chat_server(const char *ip, int port, SSL_CTX *ctx) {
 // main function to run the client
 int main() {
     char message[MAX] = {'\0'};
+    char in_message[MESSAGE_SIZE] = {'\0'};
     fd_set readset;
     SSL_CTX *ctx;
     SSL *ssl;
     char nickname[MAX_NICKNAME];
+    char c;
 
     // initialize OpenSSL
     SSL_library_init();
@@ -214,12 +216,17 @@ int main() {
     }
 
     fprintf(stdout, "What is your nickname (up to 50 characters): ");
-    if (scanf("%49s", nickname) != 1) { // Use scanf to read the nickname directly
+    if (scanf("%49[^\n]", nickname) != 1) { // Use scanf to read the nickname directly
         fprintf(stderr, "Failed to read nickname.\n");
         SSL_shutdown(ssl);
         SSL_free(ssl);
         SSL_CTX_free(ctx);
         return -1;
+    }
+    scanf("%c", &c);
+    if (c != '\n') {
+        scanf("%*[^\n]%*c");
+        printf("Warning: nickname too long, truncated.\n");
     }
 
     // send nickname to the server
@@ -234,16 +241,21 @@ int main() {
         if (select(SSL_get_fd(ssl) + 1, &readset, NULL, NULL, NULL) > 0) {
             // check for input from the user
             if (FD_ISSET(STDIN_FILENO, &readset)) {
-                if (scanf(" %[^\n]", message) == EOF) { // Read until newline
+                if (scanf(" %99[^\n]", message) == EOF) { // Read until newline
                     fprintf(stderr, "Error reading message.\n");
                     break;
+                }
+                scanf("%c", &c);
+                if (c != '\n')  {
+                    scanf("%*[^\n]%*c");
+                    printf("Warning: message too long, truncated.\n");
                 }
                 SSL_write(ssl, message, strnlen(message, sizeof(message)));
             }
 
             // check for messages from the server
             if (FD_ISSET(SSL_get_fd(ssl), &readset)) {
-                ssize_t nread = SSL_read(ssl, message, MAX - 1);
+                ssize_t nread = SSL_read(ssl, in_message, MESSAGE_SIZE - 1);
                 if (nread <= 0) {
                     if (nread == 0) {
                         fprintf(stdout, "Server closed the connection.\n");
@@ -252,8 +264,8 @@ int main() {
                     }
                     break;
                 }
-                message[nread] = '\0';
-                fprintf(stdout, "%s\n", message);
+                in_message[nread] = '\0';
+                fprintf(stdout, "%s\n", in_message);
             }
         }
     }
