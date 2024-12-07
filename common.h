@@ -12,6 +12,8 @@
 #define MOVIETALK_CERT "MovieTalk.crt"
 #define MOVIETALK_KEY "MovieTalk.key"
 
+#define DIRECTORY_NAME "DirectoryServer"
+
 
 #define TLS_PRIORITY "NORMAL:-VERS-ALL:+VERS-TLS1.3"
 
@@ -37,4 +39,5 @@
 
 
 #define MAX_CHAT_SERVERS 10
+
 

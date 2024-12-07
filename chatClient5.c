@@ -97,6 +97,17 @@ void query_chat_rooms() {
         SSL_CTX_free(ctx);
         return;
     }
+    
+    // validate CN
+    X509 *dirCert = SSL_get_peer_certificate(ssl);
+    if (X509_check_host(dirCert, DIRECTORY_NAME, 0, 0, NULL) != 1) {
+      fprintf(stderr, "Error: CN of server is not 'DirectoryServer'\n");
+      SSL_free(ssl);
+      close(sockfd);
+      SSL_CTX_free(ctx);
+      exit(1);
+    }
+    X509_free(dirCert);
 
     // send LIST request
     SSL_write(ssl, message, strnlen(message, sizeof(message)));
@@ -124,7 +135,7 @@ void query_chat_rooms() {
 }
 
 // function to connect to a chat server
-SSL *connect_to_chat_server(const char *ip, int port, SSL_CTX *ctx) {
+SSL *connect_to_chat_server(const char *ip, int port, const char *selected_topic, SSL_CTX *ctx) {
     int sockfd;
     struct sockaddr_in serv_addr;
 
@@ -155,6 +166,15 @@ SSL *connect_to_chat_server(const char *ip, int port, SSL_CTX *ctx) {
         close(sockfd);
         return NULL;
     }
+    
+    // validate CN
+    X509 *chatCert = SSL_get_peer_certificate(ssl);
+    if (X509_check_host(chatCert, selected_topic, 0, 0, NULL) != 1) {
+      fprintf(stderr, "Error: CN of chat server does not match selected topic '%s'\n", selected_topic);
+      SSL_free(ssl);
+      return NULL;
+    }
+    X509_free(chatCert);
 
     return ssl;
 }
@@ -164,6 +184,7 @@ SSL *connect_to_chat_server(const char *ip, int port, SSL_CTX *ctx) {
 int main() {
     char message[MAX] = {'\0'};
     char in_message[MESSAGE_SIZE] = {'\0'};
+    char selected_topic[MAX_NICKNAME] = {'\0'};
     fd_set readset;
     SSL_CTX *ctx;
     SSL *ssl;
@@ -195,6 +216,7 @@ int main() {
     for (int i = 0; i < num_rooms; i++) {
         if (chat_rooms[i].port == port) {
             selected_ip = chat_rooms[i].ip;
+            sprintf(selected_topic, "%s", chat_rooms[i].topic);
             break;
         }
     }
@@ -208,7 +230,7 @@ int main() {
     configure_ssl_context(ctx);
 
     // connect to the selected chat server
-    ssl = connect_to_chat_server(selected_ip, port, ctx);
+    ssl = connect_to_chat_server(selected_ip, port, selected_topic, ctx);
     if (!ssl) {
         fprintf(stderr, "Failed to connect to chat server on port %d.\n", port);
         SSL_CTX_free(ctx);
